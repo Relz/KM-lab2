@@ -1,8 +1,8 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 using namespace std;
 
-/*static const vector<vector<size_t>> START_MATRIX =
+static const vector<vector<size_t>> START_MATRIX =
 		{
 				{8, 7, 6},
 				{5, 4, 3},
@@ -14,9 +14,9 @@ static const vector<vector<size_t>> WIN_MATRIX =
 				{0, 1, 2},
 				{3, 4, 5},
 				{6, 7, 8}
-		};*/
+		};
 
-static const vector<vector<size_t>> START_MATRIX =
+/*static const vector<vector<size_t>> START_MATRIX =
 		{
 				{15, 14, 13, 12},
 				{11, 10, 9, 8},
@@ -30,7 +30,7 @@ static const vector<vector<size_t>> WIN_MATRIX =
 				{4, 5, 6, 7},
 				{8, 9, 10, 11},
 				{12, 13, 14, 15}
-		};
+		};*/
 
 enum Algorithm
 {
@@ -88,7 +88,7 @@ Node *CreateNode(Node *currentNode, int directionX, int directionY)
 {
 	Node *newNode = new Node;
 	newNode->zeroPos = Position(currentNode->zeroPos.x + directionX, currentNode->zeroPos.y + directionY);
-//	newNode->father = currentNode;
+	newNode->father = currentNode;
 	newNode->matrix = currentNode->matrix;
 	swap(newNode->matrix[currentNode->zeroPos.y + directionY][currentNode->zeroPos.x + directionX], newNode->matrix[currentNode->zeroPos.y][currentNode->zeroPos.x]);
 	newNode->hash = GetVectorHash(newNode->matrix, 0);
@@ -196,6 +196,24 @@ bool ProcessQueue(vector<Node*> & nodesQueue, set<size_t> & processedHashes, Alg
 	return true;
 }
 
+// Надеемся, что стека хватит, иначе организовать через цикл
+void PrintWayToWin(Node *winNode)
+{
+	if (winNode->father != nullptr)
+	{
+		PrintWayToWin(winNode->father);
+	}
+	for (size_t y = 0; y < winNode->matrix.size(); ++y)
+	{
+		for (size_t x = 0; x < winNode->matrix[y].size(); ++x)
+		{
+			cout << winNode->matrix[y][x] << "";
+		}
+		cout << "\n";
+	}
+	cout << "\n";
+}
+
 int main()
 {
 	Node *firstNode = new Node;
@@ -208,7 +226,12 @@ int main()
 
 	nodesQueue.push_back(firstNode);
 
+	boost::chrono::system_clock::time_point start = boost::chrono::system_clock::now();
 	while (ProcessQueue(nodesQueue, processedHashes, Algorithm::WIDTH)) {}
+	boost::chrono::duration<double> duration = boost::chrono::system_clock::now() - start;
+	cout << fixed << duration << endl;
+
+	PrintWayToWin(nodesQueue[nodesQueue.size() - 1]);
 
 	return 0;
 }
