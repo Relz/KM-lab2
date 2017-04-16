@@ -4,7 +4,19 @@ using namespace std;
 
 static const size_t MAX_DEPTH = 50;
 
-/*static const vector<vector<size_t>> START_MATRIX =
+const map<size_t, pair<size_t, size_t>> POSITIONS = {
+	{ 0, { 0, 0 } },
+	{ 1, { 1, 0 } },
+	{ 2, { 2, 0 } },
+	{ 3, { 0, 1 } },
+	{ 4, { 1, 1 } },
+	{ 5, { 2, 1 } },
+	{ 6, { 0, 2 } },
+	{ 7, { 1, 2 } },
+	{ 8, { 2, 2 } }
+};
+
+static const vector<vector<size_t>> START_MATRIX =
 {
 	{8, 7, 6},
 	{5, 4, 3},
@@ -16,7 +28,26 @@ static const vector<vector<size_t>> WIN_MATRIX =
 	{0, 1, 2},
 	{3, 4, 5},
 	{6, 7, 8}
-};*/
+};
+
+//const map<size_t, pair<size_t, size_t>> POSITIONS = {
+//	{ 0, { 0, 0 } },
+//	{ 1, { 1, 0 } },
+//	{ 2, { 2, 0 } },
+//	{ 3, { 3, 0 } },
+//	{ 4, { 0, 1 } },
+//	{ 5, { 1, 1 } },
+//	{ 6, { 2, 1 } },
+//	{ 7, { 3, 1 } },
+//	{ 8, { 0, 2 } },
+//	{ 9, { 1, 2 } },
+//	{ 10, { 2, 2 } },
+//	{ 11, { 3, 2 } },
+//	{ 12, { 0, 3 } },
+//	{ 13, { 1, 3 } },
+//	{ 14, { 2, 3 } },
+//	{ 15, { 3, 3 } }
+//};
 
 // Тяжелый тест, ещё никогда не удавалось пройти его (bad_alloc)
 /*static const vector<vector<size_t>> START_MATRIX =
@@ -27,21 +58,21 @@ static const vector<vector<size_t>> WIN_MATRIX =
 	{ 3, 2, 1, 0 }
 };*/
 
-static const vector<vector<size_t>> START_MATRIX =
-{
-	{ 4, 1, 2, 3 },
-	{ 8, 5, 6, 7 },
-	{ 9, 10, 11, 0 },
-	{ 12, 13, 14, 15 }
-};
+//static const vector<vector<size_t>> START_MATRIX =
+//{
+//	{ 4, 1, 2, 3 },
+//	{ 8, 5, 6, 7 },
+//	{ 9, 10, 11, 0 },
+//	{ 12, 13, 14, 15 }
+//};
 
-static const vector<vector<size_t>> WIN_MATRIX =
-{
-	{0, 1, 2, 3},
-	{4, 5, 6, 7},
-	{8, 9, 10, 11},
-	{12, 13, 14, 15}
-};
+//static const vector<vector<size_t>> WIN_MATRIX =
+//{
+//	{0, 1, 2, 3},
+//	{4, 5, 6, 7},
+//	{8, 9, 10, 11},
+//	{12, 13, 14, 15}
+//};
 
 enum Algorithm
 {
@@ -85,7 +116,7 @@ void CalculateZeroPos(Node *&node)
 	}
 }
 
-size_t GetVectorHash(const vector<vector<size_t> > & vect, size_t seed)
+size_t GetMatrixHash(const vector<vector<size_t> > & vect, size_t seed)
 {
 	for (size_t i = 0; i < vect.size(); ++i)
 	{
@@ -94,7 +125,35 @@ size_t GetVectorHash(const vector<vector<size_t> > & vect, size_t seed)
 	return seed;
 }
 
-static const size_t WIN_MATRIX_HASH = GetVectorHash(WIN_MATRIX, 0);
+size_t GetManhattanDistance(const vector<vector<size_t>> & matrix)
+{
+	size_t result = 0;
+	for (size_t row = 0; row < matrix.size(); ++row)
+	{
+		for (size_t col = 0; col < matrix.size(); ++col)
+		{
+			if (POSITIONS.at(matrix[row][col]).first > col)
+			{
+				result += POSITIONS.at(matrix[row][col]).first - col;
+			}
+			else
+			{
+				result += col - POSITIONS.at(matrix[row][col]).first;
+			}
+			if (POSITIONS.at(matrix[row][col]).second > row)
+			{
+				result += POSITIONS.at(matrix[row][col]).second - row;
+			}
+			else
+			{
+				result += row - POSITIONS.at(matrix[row][col]).second;
+			}
+		}
+	}
+	return result;
+}
+
+static const size_t WIN_MATRIX_HASH = GetMatrixHash(WIN_MATRIX, 0);
 
 Node *CreateNode(Node *currentNode, int directionX, int directionY)
 {
@@ -104,7 +163,7 @@ Node *CreateNode(Node *currentNode, int directionX, int directionY)
 	newNode->father = currentNode;
 	newNode->matrix = currentNode->matrix;
 	swap(newNode->matrix[currentNode->zeroPos.y + directionY][currentNode->zeroPos.x + directionX], newNode->matrix[currentNode->zeroPos.y][currentNode->zeroPos.x]);
-	newNode->hash = GetVectorHash(newNode->matrix, 0);
+	newNode->hash = GetMatrixHash(newNode->matrix, 0);
 	newNode->currentDepth = currentNode->currentDepth + 1;
 	return newNode;
 }
@@ -232,8 +291,7 @@ int main()
 	Node *firstNode = new Node;
 	firstNode->matrix = START_MATRIX;
 	CalculateZeroPos(firstNode);
-	firstNode->hash = GetVectorHash(firstNode->matrix, 0);
-
+	firstNode->hash = GetMatrixHash(firstNode->matrix, 0);
 	set<size_t> processedHashes;
 	vector<Node*> nodesQueue;
 
