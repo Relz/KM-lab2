@@ -2,35 +2,46 @@
 
 using namespace std;
 
-static const vector<vector<size_t>> START_MATRIX =
-		{
-				{8, 7, 6},
-				{5, 4, 3},
-				{2, 1, 0}
-		};
-
-static const vector<vector<size_t>> WIN_MATRIX =
-		{
-				{0, 1, 2},
-				{3, 4, 5},
-				{6, 7, 8}
-		};
+static const size_t MAX_DEPTH = 50;
 
 /*static const vector<vector<size_t>> START_MATRIX =
-		{
-				{15, 14, 13, 12},
-				{11, 10, 9, 8},
-				{7, 6, 5, 4},
-				{3, 2, 1, 0}
-		};
+{
+	{8, 7, 6},
+	{5, 4, 3},
+	{2, 1, 0}
+};
 
 static const vector<vector<size_t>> WIN_MATRIX =
-		{
-				{0, 1, 2, 3},
-				{4, 5, 6, 7},
-				{8, 9, 10, 11},
-				{12, 13, 14, 15}
-		};*/
+{
+	{0, 1, 2},
+	{3, 4, 5},
+	{6, 7, 8}
+};*/
+
+// Тяжелый тест, ещё никогда не удавалось пройти его (bad_alloc)
+/*static const vector<vector<size_t>> START_MATRIX =
+{
+	{ 15, 14, 13, 12 },
+	{ 11, 10, 9, 8 },
+	{ 7, 6, 5, 4 },
+	{ 3, 2, 1, 0 }
+};*/
+
+static const vector<vector<size_t>> START_MATRIX =
+{
+	{ 4, 1, 2, 3 },
+	{ 8, 5, 6, 7 },
+	{ 9, 10, 11, 0 },
+	{ 12, 13, 14, 15 }
+};
+
+static const vector<vector<size_t>> WIN_MATRIX =
+{
+	{0, 1, 2, 3},
+	{4, 5, 6, 7},
+	{8, 9, 10, 11},
+	{12, 13, 14, 15}
+};
 
 enum Algorithm
 {
@@ -56,6 +67,7 @@ struct Node
 	vector<vector<size_t>> matrix;
 	Position zeroPos = {0, 0};
 	Node *father = nullptr;
+	size_t currentDepth = 0;
 };
 
 void CalculateZeroPos(Node *&node)
@@ -86,12 +98,14 @@ static const size_t WIN_MATRIX_HASH = GetVectorHash(WIN_MATRIX, 0);
 
 Node *CreateNode(Node *currentNode, int directionX, int directionY)
 {
+	// Возможность появления исключения bad_alloc
 	Node *newNode = new Node;
 	newNode->zeroPos = Position(currentNode->zeroPos.x + directionX, currentNode->zeroPos.y + directionY);
 	newNode->father = currentNode;
 	newNode->matrix = currentNode->matrix;
 	swap(newNode->matrix[currentNode->zeroPos.y + directionY][currentNode->zeroPos.x + directionX], newNode->matrix[currentNode->zeroPos.y][currentNode->zeroPos.x]);
 	newNode->hash = GetVectorHash(newNode->matrix, 0);
+	newNode->currentDepth = currentNode->currentDepth + 1;
 	return newNode;
 }
 
@@ -100,33 +114,16 @@ bool IsHashProcessed(size_t hash, set<size_t> & processedHashes)
 	return (processedHashes.find(hash) != processedHashes.end());
 }
 
-Node *savedNode = nullptr;
-
 bool ProcessQueue(vector<Node*> & nodesQueue, set<size_t> & processedHashes, Algorithm algorithm)
 {
 	Node *firstNode = nodesQueue.front();
 	nodesQueue.erase(nodesQueue.begin());
+	if (algorithm == Algorithm::LENGTH && firstNode->currentDepth == MAX_DEPTH)
+	{
+		return true;
+	}
 	if (!IsHashProcessed(firstNode->hash, processedHashes))
 	{
-		if (firstNode->zeroPos.y > 0)
-		{
-			if (algorithm == Algorithm::WIDTH)
-			{
-				nodesQueue.push_back(CreateNode(firstNode, 0, -1));
-				if (nodesQueue.back()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::LENGTH)
-			{
-				nodesQueue.insert(nodesQueue.begin(), CreateNode(firstNode, 0, -1));
-				if (nodesQueue.front()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-		}
 		if (firstNode->zeroPos.x < firstNode->matrix.size() - 1)
 		{
 			if (algorithm == Algorithm::WIDTH)
@@ -165,6 +162,25 @@ bool ProcessQueue(vector<Node*> & nodesQueue, set<size_t> & processedHashes, Alg
 				}
 			}
 		}
+		if (firstNode->zeroPos.y > 0)
+		{
+			if (algorithm == Algorithm::WIDTH)
+			{
+				nodesQueue.push_back(CreateNode(firstNode, 0, -1));
+				if (nodesQueue.back()->hash == WIN_MATRIX_HASH)
+				{
+					return false;
+				}
+			}
+			else if (algorithm == Algorithm::LENGTH)
+			{
+				nodesQueue.insert(nodesQueue.begin(), CreateNode(firstNode, 0, -1));
+				if (nodesQueue.front()->hash == WIN_MATRIX_HASH)
+				{
+					return false;
+				}
+			}
+		}
 		if (firstNode->zeroPos.x > 0)
 		{
 			if (algorithm == Algorithm::WIDTH)
@@ -185,13 +201,10 @@ bool ProcessQueue(vector<Node*> & nodesQueue, set<size_t> & processedHashes, Alg
 			}
 		}
 		processedHashes.insert(firstNode->hash);
-		if (savedNode == nullptr)
-		{
-			if (nodesQueue.size() > 0)
-			{
-				savedNode = nodesQueue[nodesQueue.size() - 1];
-			}
-		}
+	}
+	if (nodesQueue.empty())
+	{
+		return false;
 	}
 	return true;
 }
@@ -207,7 +220,7 @@ void PrintWayToWin(Node *winNode)
 	{
 		for (size_t x = 0; x < winNode->matrix[y].size(); ++x)
 		{
-			cout << winNode->matrix[y][x] << "";
+			cout << winNode->matrix[y][x] << " ";
 		}
 		cout << "\n";
 	}
@@ -226,12 +239,21 @@ int main()
 
 	nodesQueue.push_back(firstNode);
 
+	Algorithm algorithm = Algorithm::LENGTH;
+
 	boost::chrono::system_clock::time_point start = boost::chrono::system_clock::now();
-	while (ProcessQueue(nodesQueue, processedHashes, Algorithm::WIDTH)) {}
+	while (ProcessQueue(nodesQueue, processedHashes, algorithm)) {}
 	boost::chrono::duration<double> duration = boost::chrono::system_clock::now() - start;
 	cout << fixed << duration << endl;
 
-	PrintWayToWin(nodesQueue[nodesQueue.size() - 1]);
+	if (algorithm == Algorithm::WIDTH)
+	{
+		PrintWayToWin(nodesQueue[nodesQueue.size() - 1]);
+	}
+	else if (algorithm == Algorithm::LENGTH)
+	{
+		PrintWayToWin(nodesQueue[0]);
+	}
 
 	return 0;
 }
