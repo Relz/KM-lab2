@@ -166,12 +166,12 @@ bool IsHashProcessed(size_t hash, set<size_t> & processedHashes)
 	return (processedHashes.find(hash) != processedHashes.end());
 }
 
-bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, set<size_t> & processedHashes, Algorithm algorithm)
+Node *GetFirstNode(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, Algorithm algorithm)
 {
-	Node *firstNode = nullptr;
+	Node *result = nullptr;
 	if (algorithm == Algorithm::ASTAR)
 	{
-		firstNode = nodesPriorityQueue.begin()->second[nodesPriorityQueue.begin()->second.size() - 1];
+		result = nodesPriorityQueue.begin()->second[nodesPriorityQueue.begin()->second.size() - 1];
 		if (nodesPriorityQueue.begin()->second.size() == 1)
 		{
 			nodesPriorityQueue.erase(nodesPriorityQueue.begin());
@@ -181,11 +181,17 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 			nodesPriorityQueue.begin()->second.pop_back();
 		}
 	}
-	else
+	else if (algorithm == Algorithm::WIDTH || algorithm == Algorithm::LENGTH)
 	{
-		firstNode = nodesQueue.front();
+		result = nodesQueue.front();
 		nodesQueue.erase(nodesQueue.begin());
 	}
+	return result;
+}
+
+bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, set<size_t> & processedHashes, size_t & totalNodeCount, Algorithm algorithm)
+{
+	Node *firstNode = GetFirstNode(nodesQueue, nodesPriorityQueue, algorithm);
 	if (algorithm == Algorithm::LENGTH && firstNode->currentDepth == MAX_DEPTH)
 	{
 		return true;
@@ -345,6 +351,8 @@ int main()
 	vector<Node*> nodesQueue;
 	map<size_t, vector<Node*>> nodesPriorityQueue;
 
+	size_t totalNodeCount = 0;
+
 	Algorithm algorithm = Algorithm::ASTAR;
 	if (algorithm == Algorithm::WIDTH || algorithm == Algorithm::LENGTH)
 	{
@@ -356,7 +364,7 @@ int main()
 	}
 
 	boost::chrono::system_clock::time_point start = boost::chrono::system_clock::now();
-	while (ProcessQueue(nodesQueue, nodesPriorityQueue, processedHashes, algorithm)) {}
+	while (ProcessQueue(nodesQueue, nodesPriorityQueue, processedHashes, totalNodeCount, algorithm)) {}
 	boost::chrono::duration<double> duration = boost::chrono::system_clock::now() - start;
 	cout << fixed << duration << endl;
 
