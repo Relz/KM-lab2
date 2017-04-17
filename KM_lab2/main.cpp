@@ -71,12 +71,12 @@ enum Algorithm
 	ASTAR
 };
 
-struct Position
+struct Point
 {
 	size_t x = 0;
 	size_t y = 0;
 
-	Position(size_t x, size_t y)
+	Point(size_t x, size_t y)
 		: x(x)
 		, y(y)
 	{
@@ -87,7 +87,7 @@ struct Node
 {
 	size_t hash = 0;
 	vector<vector<size_t>> matrix;
-	Position zeroPos = {0, 0};
+	Point zeroPos = {0, 0};
 	Node *father = nullptr;
 	size_t currentDepth = 0;
 };
@@ -100,7 +100,7 @@ void CalculateZeroPos(Node *&node)
 		{
 			if (node->matrix[i][j] == 0)
 			{
-				node->zeroPos = Position(j, i);
+				node->zeroPos = Point(j, i);
 				break;
 			}
 		}
@@ -154,7 +154,7 @@ Node *CreateNode(Node *currentNode, int directionX, int directionY)
 {
 	// Возможность появления исключения bad_alloc
 	Node *newNode = new Node;
-	newNode->zeroPos = Position(currentNode->zeroPos.x + directionX, currentNode->zeroPos.y + directionY);
+	newNode->zeroPos = Point(currentNode->zeroPos.x + directionX, currentNode->zeroPos.y + directionY);
 	newNode->father = currentNode;
 	newNode->matrix = currentNode->matrix;
 	swap(newNode->matrix[currentNode->zeroPos.y + directionY][currentNode->zeroPos.x + directionX], newNode->matrix[currentNode->zeroPos.y][currentNode->zeroPos.x]);
@@ -204,6 +204,37 @@ bool CheckDepthLimit(Node *currentNode, Algorithm algorithm)
 	return result;
 }
 
+bool InsertNewNodeToQueueAndCheckIsItWin(Node *curentNode, const Point & direction, vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, Algorithm algorithm)
+{
+	bool result = true;
+	if (algorithm == Algorithm::WIDTH)
+	{
+		nodesQueue.push_back(CreateNode(curentNode, direction.x, direction.y));
+		if (nodesQueue.back()->hash == WIN_MATRIX_HASH)
+		{
+			result = false;
+		}
+	}
+	else if (algorithm == Algorithm::LENGTH)
+	{
+		nodesQueue.insert(nodesQueue.begin(), CreateNode(curentNode, direction.x, direction.y));
+		if (nodesQueue.front()->hash == WIN_MATRIX_HASH)
+		{
+			result = false;
+		}
+	}
+	else if (algorithm == Algorithm::ASTAR)
+	{
+		Node *newNode = CreateNode(curentNode, direction.x, direction.y);
+		nodesPriorityQueue[GetManhattanDistance(newNode->matrix)].push_back(newNode);
+		if (newNode->hash == WIN_MATRIX_HASH)
+		{
+			result = false;
+		}
+	}
+	return result;
+}
+
 bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, set<size_t> & processedHashes, size_t & totalNodeCount, Algorithm algorithm)
 {
 	Node *firstNode = GetFirstNode(nodesQueue, nodesPriorityQueue, algorithm);
@@ -215,114 +246,30 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 	{
 		if (firstNode->zeroPos.x < firstNode->matrix.size() - 1)
 		{
-			if (algorithm == Algorithm::WIDTH)
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, algorithm))
 			{
-				nodesQueue.push_back(CreateNode(firstNode, 1, 0));
-				if (nodesQueue.back()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::LENGTH)
-			{
-				nodesQueue.insert(nodesQueue.begin(), CreateNode(firstNode, 1, 0));
-				if (nodesQueue.front()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::ASTAR)
-			{
-				Node *newNode = CreateNode(firstNode, 1, 0);
-				nodesPriorityQueue[GetManhattanDistance(newNode->matrix)].push_back(newNode);
-				if (newNode->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
+				return false;
 			}
 		}
 		if (firstNode->zeroPos.y < firstNode->matrix.size() - 1)
 		{
-			if (algorithm == Algorithm::WIDTH)
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, 1), nodesQueue, nodesPriorityQueue, algorithm))
 			{
-				nodesQueue.push_back(CreateNode(firstNode, 0, 1));
-				if (nodesQueue.back()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::LENGTH)
-			{
-				nodesQueue.insert(nodesQueue.begin(), CreateNode(firstNode, 0, 1));
-				if (nodesQueue.front()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::ASTAR)
-			{
-				Node *newNode = CreateNode(firstNode, 0, 1);
-				nodesPriorityQueue[GetManhattanDistance(newNode->matrix)].push_back(newNode);
-				if (newNode->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
+				return false;
 			}
 		}
 		if (firstNode->zeroPos.y > 0)
 		{
-			if (algorithm == Algorithm::WIDTH)
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, algorithm))
 			{
-				nodesQueue.push_back(CreateNode(firstNode, 0, -1));
-				if (nodesQueue.back()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::LENGTH)
-			{
-				nodesQueue.insert(nodesQueue.begin(), CreateNode(firstNode, 0, -1));
-				if (nodesQueue.front()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::ASTAR)
-			{
-				Node *newNode = CreateNode(firstNode, 0, -1);
-				nodesPriorityQueue[GetManhattanDistance(newNode->matrix)].push_back(newNode);
-				if (newNode->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
+				return false;
 			}
 		}
 		if (firstNode->zeroPos.x > 0)
 		{
-			if (algorithm == Algorithm::WIDTH)
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(-1, 0), nodesQueue, nodesPriorityQueue, algorithm))
 			{
-				nodesQueue.push_back(CreateNode(firstNode, -1, 0));
-				if (nodesQueue.back()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::LENGTH)
-			{
-				nodesQueue.insert(nodesQueue.begin(), CreateNode(firstNode, -1, 0));
-				if (nodesQueue.front()->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
-			}
-			else if (algorithm == Algorithm::ASTAR)
-			{
-				Node *newNode = CreateNode(firstNode, -1, 0);
-				nodesPriorityQueue[GetManhattanDistance(newNode->matrix)].push_back(newNode);
-				if (newNode->hash == WIN_MATRIX_HASH)
-				{
-					return false;
-				}
+				return false;
 			}
 		}
 		processedHashes.insert(firstNode->hash);
