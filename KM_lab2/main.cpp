@@ -2,8 +2,6 @@
 
 using namespace std;
 
-static const size_t MAX_DEPTH = 50;
-
 //const map<size_t, pair<size_t, size_t>> POSITIONS = {
 //	{ 0, { 0, 0 } },
 //	{ 1, { 1, 0 } },
@@ -118,6 +116,10 @@ size_t GetMatrixHash(const vector<vector<size_t> > & vect, size_t seed)
 	return seed;
 }
 
+static const map<Algorithm, size_t> MAX_DEPTH = {
+	{ Algorithm::LENGTH, 50 }
+};
+
 size_t GetManhattanDistance(const vector<vector<size_t>> & matrix)
 {
 	size_t result = 0;
@@ -189,10 +191,23 @@ Node *GetFirstNode(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & node
 	return result;
 }
 
+bool CheckDepthLimit(Node *currentNode, Algorithm algorithm)
+{
+	bool result = false;
+	if (MAX_DEPTH.find(algorithm) != MAX_DEPTH.end())
+	{
+		if (currentNode->currentDepth == MAX_DEPTH.at(algorithm))
+		{
+			result = true;
+		}
+	}
+	return result;
+}
+
 bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, set<size_t> & processedHashes, size_t & totalNodeCount, Algorithm algorithm)
 {
 	Node *firstNode = GetFirstNode(nodesQueue, nodesPriorityQueue, algorithm);
-	if (algorithm == Algorithm::LENGTH && firstNode->currentDepth == MAX_DEPTH)
+	if (CheckDepthLimit(firstNode, algorithm))
 	{
 		return true;
 	}
