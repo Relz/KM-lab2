@@ -235,6 +235,20 @@ bool InsertNewNodeToQueueAndCheckIsItWin(Node *curentNode, const Point & directi
 	return result;
 }
 
+bool IsEmptyQueue(const vector<Node*> & nodesQueue, const map<size_t, vector<Node*>> & nodesPriorityQueue, Algorithm algorithm)
+{
+	bool result = false;
+	if (nodesQueue.empty() && (algorithm == Algorithm::WIDTH || algorithm == Algorithm::LENGTH))
+	{
+		result = true;
+	}
+	else if (nodesPriorityQueue.empty() && algorithm == Algorithm::ASTAR)
+	{
+		result = true;
+	}
+	return result;
+}
+
 bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, set<size_t> & processedHashes, size_t & totalNodeCount, Algorithm algorithm)
 {
 	Node *firstNode = GetFirstNode(nodesQueue, nodesPriorityQueue, algorithm);
@@ -274,11 +288,7 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		}
 		processedHashes.insert(firstNode->hash);
 	}
-	if (nodesQueue.empty() && (algorithm == Algorithm::WIDTH || algorithm == Algorithm::LENGTH))
-	{
-		return false;
-	}
-	else if (nodesPriorityQueue.empty() && algorithm == Algorithm::ASTAR)
+	if (IsEmptyQueue(nodesQueue, nodesPriorityQueue, algorithm))
 	{
 		return false;
 	}
