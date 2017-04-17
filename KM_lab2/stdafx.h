@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
-#include <vector>
 #include <set>
 #include <map>
 #include <math.h>
+#include <vector>
+#include <utility>
 #include <boost/functional/hash.hpp>
 #include <boost/chrono.hpp>
