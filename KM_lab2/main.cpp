@@ -205,8 +205,7 @@ void PrintMemoryUsage()
 {
 	PROCESS_MEMORY_COUNTERS pmc;
 	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-	SIZE_T physMemUsedByMe = pmc.WorkingSetSize;
-	cout << physMemUsedByMe << "\n";
+	cout << pmc.WorkingSetSize << "\n";
 }
 
 int main()
