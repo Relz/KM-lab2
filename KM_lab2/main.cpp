@@ -12,7 +12,7 @@ static const map<Algorithm, size_t> MAX_DEPTH = {
 	{ Algorithm::LENGTH, 50 }
 };
 
-Algorithm ALGORITHM = Algorithm::ASTAR;
+Algorithm ALGORITHM = Algorithm::WIDTH;
 
 bool IsHashProcessed(size_t hash, set<size_t> & processedHashes)
 {
@@ -164,38 +164,49 @@ bool ReadStartMatrix(const string & inputFileName, Matrix & matrix)
 	return result;
 }
 
-void PrintWay(const vector<Node*> & nodesQueue, const map<size_t, vector<Node*>> & nodesPriorityQueue)
+void PrintWay(const vector<Node*> & nodesQueue, const map<size_t, vector<Node*>> & nodesPriorityQueue, size_t & wayLength)
 {
+	wayLength = 0;
 	if (ALGORITHM == Algorithm::WIDTH)
 	{
-		Node::PrintWay(nodesQueue[nodesQueue.size() - 1], nodesQueue[nodesQueue.size() - 1]->matrix);
+		Node::PrintWay(nodesQueue[nodesQueue.size() - 1], nodesQueue[nodesQueue.size() - 1]->matrix, wayLength);
 	}
 	else if (ALGORITHM == Algorithm::LENGTH)
 	{
-		Node::PrintWay(nodesQueue[0], nodesQueue[0]->matrix);
+		Node::PrintWay(nodesQueue[0], nodesQueue[0]->matrix, wayLength);
 	}
 	else if (ALGORITHM == Algorithm::ASTAR)
 	{
-		Node::PrintWay(nodesPriorityQueue.begin()->second[0], nodesPriorityQueue.begin()->second[0]->matrix);
+		Node::PrintWay(nodesPriorityQueue.begin()->second[0], nodesPriorityQueue.begin()->second[0]->matrix, wayLength);
 	}
+	--wayLength;
 }
 
-void PrintSteps(const vector<Node*> & nodesQueue, const map<size_t, vector<Node*>> & nodesPriorityQueue)
+void PrintSteps(const vector<Node*> & nodesQueue, const map<size_t, vector<Node*>> & nodesPriorityQueue, size_t & wayLength)
 {
+	wayLength = 0;
 	cout << "[";
 	if (ALGORITHM == Algorithm::WIDTH)
 	{
-		Node::PrintSteps(nodesQueue[nodesQueue.size() - 1], nodesQueue[nodesQueue.size() - 1]->matrix, Point(SIZE_MAX, SIZE_MAX));
+		Node::PrintSteps(nodesQueue[nodesQueue.size() - 1], nodesQueue[nodesQueue.size() - 1]->matrix, Point(SIZE_MAX, SIZE_MAX), wayLength);
 	}
 	else if (ALGORITHM == Algorithm::LENGTH)
 	{
-		Node::PrintSteps(nodesQueue[0], nodesQueue[0]->matrix, Point(SIZE_MAX, SIZE_MAX));
+		Node::PrintSteps(nodesQueue[0], nodesQueue[0]->matrix, Point(SIZE_MAX, SIZE_MAX), wayLength);
 	}
 	else if (ALGORITHM == Algorithm::ASTAR)
 	{
-		Node::PrintSteps(nodesPriorityQueue.begin()->second[0], nodesPriorityQueue.begin()->second[0]->matrix, Point(SIZE_MAX, SIZE_MAX));
+		Node::PrintSteps(nodesPriorityQueue.begin()->second[0], nodesPriorityQueue.begin()->second[0]->matrix, Point(SIZE_MAX, SIZE_MAX), wayLength);
 	}
 	cout << "]\n";
+}
+
+void PrintMemoryUsage()
+{
+	PROCESS_MEMORY_COUNTERS pmc;
+	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
+	SIZE_T physMemUsedByMe = pmc.WorkingSetSize;
+	cout << physMemUsedByMe << "\n";
 }
 
 int main()
@@ -223,17 +234,20 @@ int main()
 		nodesPriorityQueue[Node::CalculateManhattanDistance(firstNode->matrix)].push_back(firstNode);
 	}
 
-
 	boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
 	while (ProcessQueue(nodesQueue, nodesPriorityQueue, processedHashes, totalNodeCount, ALGORITHM)) {}
 	boost::chrono::high_resolution_clock::time_point end = boost::chrono::high_resolution_clock::now();
 	boost::chrono::milliseconds duration = boost::chrono::duration_cast<boost::chrono::milliseconds>(end - start);
-	/*cout << fixed << duration.count() << "\n";
-	cout << totalNodeCount << "\n";
-	cout << processedHashes.size() << "\n";*/
+	cout << fixed << duration.count() << "\n";
+	//cout << totalNodeCount << "\n";
+	//cout << processedHashes.size() << "\n";
 
-	//PrintWay(nodesQueue, nodesPriorityQueue);
-	PrintSteps(nodesQueue, nodesPriorityQueue);
+	size_t wayLength = 0;
+	//PrintWay(nodesQueue, nodesPriorityQueue, wayLength);
+	//PrintSteps(nodesQueue, nodesPriorityQueue, wayLength);
+	//cout << wayLength << "\n";
+	
+	//PrintMemoryUsage();
 	
 	return 0;
 }

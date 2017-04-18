@@ -72,12 +72,13 @@ public:
 		return seed;
 	}
 
-	static void PrintWay(CNode *currentNode, const Matrix & matrix)
+	static void PrintWay(CNode *currentNode, const Matrix & matrix, size_t & wayLength)
 	{
 		if (currentNode->GetFather() != nullptr)
 		{
-			PrintWay(currentNode->GetFather(), currentNode->GetFather()->matrix);
+			PrintWay(currentNode->GetFather(), currentNode->GetFather()->matrix, wayLength);
 		}
+		++wayLength;
 		for (size_t y = 0; y < matrix.size(); ++y)
 		{
 			for (size_t x = 0; x < matrix[y].size(); ++x)
@@ -89,16 +90,17 @@ public:
 		cout << "\n";
 	}
 
-	static void PrintSteps(CNode *currentNode, const Matrix & matrix, const Point & fromZeroPos)
+	static void PrintSteps(CNode *currentNode, const Matrix & matrix, const Point & fromZeroPos, size_t & wayLength)
 	{
 		if (currentNode->GetFather() != nullptr)
 		{
-			PrintSteps(currentNode->GetFather(), currentNode->GetFather()->matrix, currentNode->GetZeroPos());
+			PrintSteps(currentNode->GetFather(), currentNode->GetFather()->matrix, currentNode->GetZeroPos(), wayLength);
 		}
 		if (fromZeroPos.x == SIZE_MAX && fromZeroPos.y == SIZE_MAX)
 		{
 			return;
 		}
+		++wayLength;
 		if (currentNode->GetZeroPos().x > fromZeroPos.x)
 		{
 			cout << "'left', ";
