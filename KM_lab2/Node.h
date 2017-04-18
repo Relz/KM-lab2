@@ -76,7 +76,7 @@ public:
 	{
 		if (currentNode->GetFather() != nullptr)
 		{
-			PrintWay(currentNode->GetFather(), currentNode->matrix);
+			PrintWay(currentNode->GetFather(), currentNode->GetFather()->matrix);
 		}
 		for (size_t y = 0; y < matrix.size(); ++y)
 		{
@@ -87,6 +87,34 @@ public:
 			cout << "\n";
 		}
 		cout << "\n";
+	}
+
+	static void PrintSteps(CNode *currentNode, const Matrix & matrix, const Point & fromZeroPos)
+	{
+		if (currentNode->GetFather() != nullptr)
+		{
+			PrintSteps(currentNode->GetFather(), currentNode->GetFather()->matrix, currentNode->GetZeroPos());
+		}
+		if (fromZeroPos.x == SIZE_MAX && fromZeroPos.y == SIZE_MAX)
+		{
+			return;
+		}
+		if (currentNode->GetZeroPos().x > fromZeroPos.x)
+		{
+			cout << "'left', ";
+		}
+		else if (currentNode->GetZeroPos().x < fromZeroPos.x)
+		{
+			cout << "'right', ";
+		}
+		else if (currentNode->GetZeroPos().y > fromZeroPos.y)
+		{
+			cout << "'up', ";
+		}
+		else if (currentNode->GetZeroPos().y < fromZeroPos.y)
+		{
+			cout << "'down', ";
+		}
 	}
 
 	static size_t CalculateManhattanDistance(const Matrix & matrix)

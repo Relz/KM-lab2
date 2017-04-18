@@ -42,9 +42,10 @@ Node *GetFirstNode(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & node
 	return result;
 }
 
-bool InsertNewNodeToQueueAndCheckIsItWin(Node *curentNode, const Point & direction, vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, Algorithm algorithm)
+bool InsertNewNodeToQueueAndCheckIsItWin(Node *curentNode, const Point & direction, vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, size_t & totalNodeCount, Algorithm algorithm)
 {
 	bool result = true;
+	++totalNodeCount;
 	if (algorithm == Algorithm::WIDTH)
 	{
 		nodesQueue.push_back(Node::CreateNode(curentNode, direction.x, direction.y));
@@ -99,28 +100,28 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		Point & firstNodeZeroPos = firstNode->GetZeroPos();
 		if (firstNodeZeroPos.x < firstNode->matrix.size() - 1)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, algorithm))
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				return false;
 			}
 		}
 		if (firstNodeZeroPos.y < firstNode->matrix.size() - 1)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, 1), nodesQueue, nodesPriorityQueue, algorithm))
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, 1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				return false;
 			}
 		}
 		if (firstNodeZeroPos.y > 0)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, algorithm))
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				return false;
 			}
 		}
 		if (firstNodeZeroPos.x > 0)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(-1, 0), nodesQueue, nodesPriorityQueue, algorithm))
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(-1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				return false;
 			}
@@ -134,9 +135,74 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 	return true;
 }
 
+void SkipWhitespaces(ifstream & inputFile)
+{
+	while (inputFile.peek() == ' ')
+	{
+		inputFile.get();
+	}
+}
+
+bool ReadStartMatrix(const string & inputFileName, Matrix & matrix)
+{
+	ifstream inputFile(inputFileName);
+	bool result = false;
+	SkipWhitespaces(inputFile);
+	size_t elem;
+	size_t counter = 0;
+	matrix = Matrix(4, vector<size_t>());
+	while (inputFile.peek() != '\n' && !inputFile.eof() && inputFile >> elem)
+	{
+		matrix[counter].push_back(elem);
+		result = true;
+		SkipWhitespaces(inputFile);
+		if (matrix[counter].size() % 4 == 0)
+		{
+			++counter;
+		}
+	}
+	return result;
+}
+
+void PrintWay(const vector<Node*> & nodesQueue, const map<size_t, vector<Node*>> & nodesPriorityQueue)
+{
+	if (ALGORITHM == Algorithm::WIDTH)
+	{
+		Node::PrintWay(nodesQueue[nodesQueue.size() - 1], nodesQueue[nodesQueue.size() - 1]->matrix);
+	}
+	else if (ALGORITHM == Algorithm::LENGTH)
+	{
+		Node::PrintWay(nodesQueue[0], nodesQueue[0]->matrix);
+	}
+	else if (ALGORITHM == Algorithm::ASTAR)
+	{
+		Node::PrintWay(nodesPriorityQueue.begin()->second[0], nodesPriorityQueue.begin()->second[0]->matrix);
+	}
+}
+
+void PrintSteps(const vector<Node*> & nodesQueue, const map<size_t, vector<Node*>> & nodesPriorityQueue)
+{
+	cout << "[";
+	if (ALGORITHM == Algorithm::WIDTH)
+	{
+		Node::PrintSteps(nodesQueue[nodesQueue.size() - 1], nodesQueue[nodesQueue.size() - 1]->matrix, Point(SIZE_MAX, SIZE_MAX));
+	}
+	else if (ALGORITHM == Algorithm::LENGTH)
+	{
+		Node::PrintSteps(nodesQueue[0], nodesQueue[0]->matrix, Point(SIZE_MAX, SIZE_MAX));
+	}
+	else if (ALGORITHM == Algorithm::ASTAR)
+	{
+		Node::PrintSteps(nodesPriorityQueue.begin()->second[0], nodesPriorityQueue.begin()->second[0]->matrix, Point(SIZE_MAX, SIZE_MAX));
+	}
+	cout << "]\n";
+}
+
 int main()
 {
-	Node *firstNode = new Node(CONSTANT::START_MATRIX);
+	Matrix startMatrix;
+	ReadStartMatrix("input.txt", startMatrix);
+	Node *firstNode = new Node(startMatrix);
 	firstNode->SetHash(Node::CalculateMatrixHash(firstNode->matrix));
 	Point zeroPos(0, 0);
 	Node::CalculateZeroPos(firstNode->matrix, zeroPos);
@@ -157,23 +223,17 @@ int main()
 		nodesPriorityQueue[Node::CalculateManhattanDistance(firstNode->matrix)].push_back(firstNode);
 	}
 
-	boost::chrono::system_clock::time_point start = boost::chrono::system_clock::now();
-	while (ProcessQueue(nodesQueue, nodesPriorityQueue, processedHashes, totalNodeCount, ALGORITHM)) {}
-	boost::chrono::duration<double> duration = boost::chrono::system_clock::now() - start;
-	cout << fixed << duration << endl;
 
-	if (ALGORITHM == Algorithm::WIDTH)
-	{
-		Node::PrintWay(nodesQueue[nodesQueue.size() - 1], nodesQueue[nodesQueue.size() - 1]->matrix);
-	}
-	else if (ALGORITHM == Algorithm::LENGTH)
-	{
-		Node::PrintWay(nodesQueue[0], nodesQueue[0]->matrix);
-	}
-	else if (ALGORITHM == Algorithm::ASTAR)
-	{
-		Node::PrintWay(nodesPriorityQueue.begin()->second[0], nodesPriorityQueue.begin()->second[0]->matrix);
-	}
+	boost::chrono::high_resolution_clock::time_point start = boost::chrono::high_resolution_clock::now();
+	while (ProcessQueue(nodesQueue, nodesPriorityQueue, processedHashes, totalNodeCount, ALGORITHM)) {}
+	boost::chrono::high_resolution_clock::time_point end = boost::chrono::high_resolution_clock::now();
+	boost::chrono::milliseconds duration = boost::chrono::duration_cast<boost::chrono::milliseconds>(end - start);
+	/*cout << fixed << duration.count() << "\n";
+	cout << totalNodeCount << "\n";
+	cout << processedHashes.size() << "\n";*/
+
+	//PrintWay(nodesQueue, nodesPriorityQueue);
+	PrintSteps(nodesQueue, nodesPriorityQueue);
 	
 	return 0;
 }

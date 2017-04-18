@@ -4,6 +4,7 @@
 #include <map>
 #include <math.h>
 #include <vector>
+#include <fstream>
 #include <utility>
 #include <boost/functional/hash.hpp>
 #include <boost/chrono.hpp>
