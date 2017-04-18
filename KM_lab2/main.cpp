@@ -9,10 +9,10 @@ using CONSTANT = Constant::FIFTEEN_GAME;
 using Node = CNode<CONSTANT>;
 
 static const map<Algorithm, size_t> MAX_DEPTH = {
-	{ Algorithm::LENGTH, 50 }
+	{ Algorithm::LENGTH, 13 }
 };
 
-Algorithm ALGORITHM = Algorithm::WIDTH;
+Algorithm ALGORITHM = Algorithm::LENGTH;
 
 bool IsHashProcessed(size_t hash, set<size_t> & processedHashes)
 {
@@ -88,6 +88,7 @@ bool IsEmptyQueue(const vector<Node*> & nodesQueue, const map<size_t, vector<Nod
 	return result;
 }
 
+bool doesGoalReached = false;
 bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, set<size_t> & processedHashes, size_t & totalNodeCount, Algorithm algorithm)
 {
 	Node *firstNode = GetFirstNode(nodesQueue, nodesPriorityQueue, algorithm);
@@ -102,6 +103,7 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		{
 			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
+				doesGoalReached = true;
 				return false;
 			}
 		}
@@ -109,6 +111,7 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		{
 			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, 1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
+				doesGoalReached = true;
 				return false;
 			}
 		}
@@ -116,6 +119,7 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		{
 			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
+				doesGoalReached = true;
 				return false;
 			}
 		}
@@ -123,6 +127,7 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		{
 			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(-1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
+				doesGoalReached = true;
 				return false;
 			}
 		}
@@ -205,7 +210,7 @@ void PrintMemoryUsage()
 {
 	PROCESS_MEMORY_COUNTERS pmc;
 	GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-	cout << pmc.WorkingSetSize << "\n";
+	cout << pmc.WorkingSetSize / 1024 / 1024 << "\n";
 }
 
 int main()
@@ -237,16 +242,21 @@ int main()
 	while (ProcessQueue(nodesQueue, nodesPriorityQueue, processedHashes, totalNodeCount, ALGORITHM)) {}
 	boost::chrono::high_resolution_clock::time_point end = boost::chrono::high_resolution_clock::now();
 	boost::chrono::milliseconds duration = boost::chrono::duration_cast<boost::chrono::milliseconds>(end - start);
+	if (!doesGoalReached)
+	{
+		cout << "FAIL\n";
+		return 1;
+	}
+	cout << totalNodeCount << "\n";
+	cout << processedHashes.size() << "\n";
 	cout << fixed << duration.count() << "\n";
-	//cout << totalNodeCount << "\n";
-	//cout << processedHashes.size() << "\n";
+
+	PrintMemoryUsage();
 
 	size_t wayLength = 0;
 	//PrintWay(nodesQueue, nodesPriorityQueue, wayLength);
-	//PrintSteps(nodesQueue, nodesPriorityQueue, wayLength);
-	//cout << wayLength << "\n";
-	
-	//PrintMemoryUsage();
+	PrintSteps(nodesQueue, nodesPriorityQueue, wayLength);
+	cout << wayLength << "\n";
 	
 	return 0;
 }
