@@ -9,7 +9,7 @@ using CONSTANT = Constant::FIFTEEN_GAME;
 using Node = CNode<CONSTANT>;
 
 static const map<Algorithm, size_t> MAX_DEPTH = {
-	{ Algorithm::LENGTH, 13 }
+	{ Algorithm::LENGTH, 25 }
 };
 
 Algorithm ALGORITHM = Algorithm::LENGTH;
@@ -99,9 +99,9 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 	if (!IsHashProcessed(firstNode->GetHash(), processedHashes))
 	{
 		Point & firstNodeZeroPos = firstNode->GetZeroPos();
-		if (firstNodeZeroPos.x < firstNode->matrix.size() - 1)
+		if (firstNodeZeroPos.y > 0)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				doesGoalReached = true;
 				return false;
@@ -115,9 +115,9 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 				return false;
 			}
 		}
-		if (firstNodeZeroPos.y > 0)
+		if (firstNodeZeroPos.x < firstNode->matrix.size() - 1)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
+			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				doesGoalReached = true;
 				return false;
