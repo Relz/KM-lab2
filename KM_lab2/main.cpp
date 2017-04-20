@@ -9,14 +9,24 @@ using CONSTANT = Constant::FIFTEEN_GAME;
 using Node = CNode<CONSTANT>;
 
 static const map<Algorithm, size_t> MAX_DEPTH = {
-	{ Algorithm::LENGTH, 25 }
+	{ Algorithm::LENGTH, 30}
 };
 
 Algorithm ALGORITHM = Algorithm::LENGTH;
 
-bool IsHashProcessed(size_t hash, set<size_t> & processedHashes)
+map<size_t, size_t> hashMinDepth;
+bool IsHashProcessed(Node *currentNode, set<size_t> & processedHashes, Algorithm algorithm)
 {
-	return (processedHashes.find(hash) != processedHashes.end());
+	bool result = processedHashes.find(currentNode->GetHash()) != processedHashes.end();
+	if (result && algorithm == Algorithm::LENGTH)
+	{
+		if (hashMinDepth.find(result) == hashMinDepth.end() || hashMinDepth.at(result) >= currentNode->GetDepth())
+		{
+			result = false;
+			hashMinDepth[result] = currentNode->GetDepth();
+		}
+	}
+	return result;
 }
 
 Node *GetFirstNode(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, Algorithm algorithm)
@@ -44,14 +54,14 @@ Node *GetFirstNode(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & node
 
 bool InsertNewNodeToQueueAndCheckIsItWin(Node *curentNode, const Point & direction, vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodesPriorityQueue, size_t & totalNodeCount, Algorithm algorithm)
 {
-	bool result = true;
+	bool result = false;
 	++totalNodeCount;
 	if (algorithm == Algorithm::WIDTH)
 	{
 		nodesQueue.push_back(Node::CreateNode(curentNode, direction.x, direction.y));
 		if (nodesQueue.back()->GetHash() == CONSTANT::WIN_MATRIX_HASH)
 		{
-			result = false;
+			result = true;
 		}
 	}
 	else if (algorithm == Algorithm::LENGTH)
@@ -59,16 +69,16 @@ bool InsertNewNodeToQueueAndCheckIsItWin(Node *curentNode, const Point & directi
 		nodesQueue.insert(nodesQueue.begin(), Node::CreateNode(curentNode, direction.x, direction.y));
 		if (nodesQueue.front()->GetHash() == CONSTANT::WIN_MATRIX_HASH)
 		{
-			result = false;
+			result = true;
 		}
 	}
 	else if (algorithm == Algorithm::ASTAR)
 	{
 		Node *newNode = Node::CreateNode(curentNode, direction.x, direction.y);
-		nodesPriorityQueue[Node::CalculateManhattanDistance(newNode->matrix)].push_back(newNode);
+		nodesPriorityQueue[Node::CalculateManhattanDistance(newNode->matrix) + curentNode->GetDepth()].push_back(newNode);
 		if (newNode->GetHash() == CONSTANT::WIN_MATRIX_HASH)
 		{
-			result = false;
+			result = true;
 		}
 	}
 	return result;
@@ -96,20 +106,12 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 	{
 		return true;
 	}
-	if (!IsHashProcessed(firstNode->GetHash(), processedHashes))
+	if (!IsHashProcessed(firstNode, processedHashes, algorithm))
 	{
 		Point & firstNodeZeroPos = firstNode->GetZeroPos();
 		if (firstNodeZeroPos.y > 0)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
-			{
-				doesGoalReached = true;
-				return false;
-			}
-		}
-		if (firstNodeZeroPos.y < firstNode->matrix.size() - 1)
-		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, 1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
+			if (InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, -1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				doesGoalReached = true;
 				return false;
@@ -117,7 +119,15 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		}
 		if (firstNodeZeroPos.x < firstNode->matrix.size() - 1)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
+			if (InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
+			{
+				doesGoalReached = true;
+				return false;
+			}
+		}
+		if (firstNodeZeroPos.y < firstNode->matrix.size() - 1)
+		{
+			if (InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(0, 1), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				doesGoalReached = true;
 				return false;
@@ -125,13 +135,14 @@ bool ProcessQueue(vector<Node*> & nodesQueue, map<size_t, vector<Node*>> & nodes
 		}
 		if (firstNodeZeroPos.x > 0)
 		{
-			if (!InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(-1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
+			if (InsertNewNodeToQueueAndCheckIsItWin(firstNode, Point(-1, 0), nodesQueue, nodesPriorityQueue, totalNodeCount, algorithm))
 			{
 				doesGoalReached = true;
 				return false;
 			}
 		}
 		processedHashes.insert(firstNode->GetHash());
+		hashMinDepth.insert(make_pair(firstNode->GetHash(), firstNode->GetDepth()));
 	}
 	if (IsEmptyQueue(nodesQueue, nodesPriorityQueue, algorithm))
 	{
@@ -257,6 +268,6 @@ int main()
 	//PrintWay(nodesQueue, nodesPriorityQueue, wayLength);
 	PrintSteps(nodesQueue, nodesPriorityQueue, wayLength);
 	cout << wayLength << "\n";
-	
+
 	return 0;
 }

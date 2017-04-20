@@ -185,10 +185,30 @@ public:
 		newNode->matrix = currentNode->matrix;
 		swap(newNode->matrix[newNode->GetZeroPos().y][newNode->GetZeroPos().x], newNode->matrix[currentNodeZeroPos.y][currentNodeZeroPos.x]);
 		newNode->SetHash(CNode::CalculateMatrixHash(newNode->matrix));
+		/*size_t qwer = 0;
+		if (directionY == -1)
+		{
+			qwer = 1;
+		}
+		else if (directionY == 1)
+		{
+			qwer = 3;
+		}
+		else if (directionX == -1)
+		{
+			qwer = 4;
+		}
+		else if (directionX == 1)
+		{
+			qwer = 2;
+		}*/
+		//newNode->way = currentNode->way;
+		//newNode->way.push_back(qwer);
 		return newNode;
 	}
 
 	Matrix matrix;
+	//vector<size_t> way;
 
 private:
 
